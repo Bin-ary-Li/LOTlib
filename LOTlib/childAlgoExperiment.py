@@ -93,7 +93,7 @@ class MyHypothesisX(LOTHypothesis):
         x = deepcopy(datum.input[0])
         self.__call__(x)
         assert isinstance(x - datum.output, int), 'subtraction result is not an int'
-        return - ((x - datum.output)*100 + x._lowAffordanceCnt)
+        return - ((x - datum.output)*100 + x._affordanceViolateCnt)
 
 
     # def compute_single_likelihood(self, datum):
