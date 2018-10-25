@@ -11,17 +11,20 @@ init_state = {
 
 
 WS_0 = WorldState(init_state)
-print WS_0
+WS_0.moveBall('hand_right', 'hand_right', 'green').moveBall('bucket_0','bucket_3','black')
 
-WS_0.moveBall('hand_right', 'hand_right', 'green')
-print WS_0
+end_state = {
+	'bucket_3': Bucket(black=2, red=3, green=4),
+	'hand_right': Hand(red=1)
+}
 
-# end_state = {
-# 	'bucket_3': Bucket(black=2, red=3, green=4),
-# 	'hand_right': Hand(red=1)
-# }
+WS_1 = WorldState(end_state)
 
-# WS_1 = WorldState(end_state)
+WS_2 = WorldState(init_state)
+
+assert WS_0 - WS_2 == WS_2 - WS_0
+
+# print WS_0, WS_1, WS_0 - WS_1
 
 # def testWorldStateEqual():
 # 	WS_0 = WorldState(init_state)
