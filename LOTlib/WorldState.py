@@ -207,7 +207,7 @@ class WorldState():
 
 		}
 		self.setWorldState(*args)
-		self._lowAffordanceCnt = 0
+		self._affordanceViolateCnt = 0
 
 	def __eq__(self, other):
 		bucket_0_is_equal = (self._container['bucket_0'] == other._container['bucket_0'])
@@ -270,11 +270,11 @@ class WorldState():
 		# To penalize the least-likely moveball action in this experiemental environment
 		def checkAffordance (self, from_container, to_container, color, number): 
 			if self.existColor(from_container, color, number) ^ self.canAddBall(to_container, number):
-				self._lowAffordanceCnt += Accordance_Penalty['medium']
+				self._affordanceViolateCnt += Accordance_Penalty['medium']
 			elif not self.existColor(from_container, color, number) and not self.canAddBall(to_container, number):
-				self._lowAffordanceCnt += Accordance_Penalty['high']
+				self._affordanceViolateCnt += Accordance_Penalty['high']
 			if from_container == to_container: 
-				self._lowAffordanceCnt += Accordance_Penalty['low']
+				self._affordanceViolateCnt += Accordance_Penalty['low']
 		checkAffordance(self, from_container, to_container, color, number=1)
 
 		if self.existColor(from_container, color, number) and self.canAddBall(to_container, number):
