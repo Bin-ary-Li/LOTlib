@@ -24,6 +24,11 @@ hand_left = Hand(red=1)
 ----
 
 """
+Accordance_Penalty = {
+	'low' : 1,
+	'medium': 10,
+	'high': 100
+}
 
 possible_colors = Set([
 	'black',
@@ -57,6 +62,19 @@ class Container(object):
 			elif self._contents[color] != number:
 				return False
 		return True
+
+	def __sub__(self, other): # difference define as color and ball number difference
+		selfCount = 0
+		otherCount = 0
+		colorDiff = 0
+		countDiff = 0
+		for color, number in self._contents.items():
+			assert color in other._contents.keys(), "lists of color in two container don't match"
+			colorDiff += abs(self._contents[color] - other._contents[color])
+			selfCount += self._contents[color]
+			otherCount +=other._contents[color]
+		countDiff = abs(selfCount - otherCount)
+		return colorDiff + countDiff
 
 	def __str__(self):
 		outstr = '<'
@@ -177,7 +195,7 @@ WS_0.setWorldState(state)
 
 
 """
-class WorldState():
+class WorldState(): 
 	def __init__(self, *args):
 		self._container = {
 			'bucket_0': Bucket(),
@@ -189,6 +207,7 @@ class WorldState():
 
 		}
 		self.setWorldState(*args)
+		self._lowAffordanceCnt = 0
 
 	def __eq__(self, other):
 		bucket_0_is_equal = (self._container['bucket_0'] == other._container['bucket_0'])
@@ -198,6 +217,15 @@ class WorldState():
 		hand_left_is_equal = (self._container['hand_left'] == other._container['hand_left'])
 		hand_right_is_equal = (self._container['hand_right'] == other._container['hand_right'])
 		return bucket_0_is_equal and bucket_1_is_equal and bucket_0_is_equal and bucket_1_is_equal and hand_left_is_equal and hand_right_is_equal
+
+	def __sub__(self, other):
+		bucket_0_diff = self._container['bucket_0'] - other._container['bucket_0']
+		bucket_1_diff = self._container['bucket_1'] - other._container['bucket_1']
+		bucket_2_diff = self._container['bucket_2'] - other._container['bucket_2']
+		bucket_3_diff = self._container['bucket_3'] - other._container['bucket_3']
+		hand_left_diff = self._container['hand_left'] - other._container['hand_left']
+		hand_right_diff = self._container['hand_right'] - other._container['hand_right']
+		return bucket_0_diff + bucket_1_diff + bucket_2_diff + bucket_3_diff + hand_left_diff + hand_right_diff
 
 	def __str__(self):
 		outstr = '<WorldState: \n'
@@ -222,7 +250,7 @@ class WorldState():
 			elif isinstance(container, Hand):
 				self._container[container_name] = Hand(container)
 			else:
-				sys.exit('[Error]: expect Bucket object or Hand object.')
+				sys.exit('[Error]: expect Bucket object or Hand object.') 
 
 	def existColor(self, container, color, number=1):
 		if container not in self._container.keys():
@@ -239,8 +267,17 @@ class WorldState():
 		assert from_container in self._container, "Incorrect source container name: "+from_container
 		assert to_container in self._container, "Incorrect target container name: "+to_container
 
+		# To penalize the least-likely moveball action in this experiemental environment
+		def checkAffordance (self, from_container, to_container, color, number): 
+			if self.existColor(from_container, color, number) ^ self.canAddBall(to_container, number):
+				self._lowAffordanceCnt += Accordance_Penalty['medium']
+			elif not self.existColor(from_container, color, number) and not self.canAddBall(to_container, number):
+				self._lowAffordanceCnt += Accordance_Penalty['high']
+			if from_container == to_container: 
+				self._lowAffordanceCnt += Accordance_Penalty['low']
+		checkAffordance(self, from_container, to_container, color, number=1)
+
 		if self.existColor(from_container, color, number) and self.canAddBall(to_container, number):
 			self._container[from_container]._contents[color] = self._container[from_container]._contents[color] - number
 			self._container[to_container]._contents[color] = self._container[to_container]._contents[color] + number
-			return True
-		return False
+		return self
