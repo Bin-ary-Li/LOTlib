@@ -1,6 +1,7 @@
 from LOTlib.Miscellaneous import self_update
 from sets import Set
 import sys
+import random
 
 """
 
@@ -107,6 +108,9 @@ class Bucket(Container): # Bucket as a subclass of Container
 			vacancy = vacancy - number
 		return vacancy
 
+	def isEmpty(self):
+		return self.get_vacancy() == self._capacity
+
 
 class Hand(Container): # Bucket as a subclass of Container
 	def __init__(self, *args, **kwargs):
@@ -124,6 +128,9 @@ class Hand(Container): # Bucket as a subclass of Container
 		for color, number in self._contents.items():
 			vacancy = vacancy - number
 		return vacancy
+
+	def isEmpty(self):
+		return self.get_vacancy() == self._capacity
 
 """
 
@@ -208,6 +215,7 @@ class WorldState():
 		}
 		self.setWorldState(*args)
 		self._affordanceViolateCnt = 0
+		self._itrCounter = 0
 
 	def __eq__(self, other):
 		bucket_0_is_equal = (self._container['bucket_0'] == other._container['bucket_0'])
@@ -280,4 +288,13 @@ class WorldState():
 		if self.existColor(from_container, color, number) and self.canAddBall(to_container, number):
 			self._container[from_container]._contents[color] = self._container[from_container]._contents[color] - number
 			self._container[to_container]._contents[color] = self._container[to_container]._contents[color] + number
+		return self
+
+	def moveRandomBall(self, from_container, to_container):
+		existedBalls = []
+		if not self._container[from_container].isEmpty():
+			for color, number in self._container[from_container]._contents.items():
+				if number != 0:
+					existedBalls.append (color)
+			self = self.moveBall(from_container, to_container, random.choice(existedBalls))
 		return self
