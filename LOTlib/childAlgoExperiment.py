@@ -2,6 +2,7 @@ from LOTlib.WorldState import *
 from LOTlib.Eval import primitive
 from copy import deepcopy
 
+
 ######################################## 
 ## Define a grammar
 ######################################## 
@@ -10,16 +11,20 @@ from LOTlib.Grammar import Grammar
 
 grammar = Grammar()
 
-grammar.add_rule('START', '', ['ACTION_SEQ'], 1.0)
+grammar.add_rule('START', '', ['STATEMENT_SEQ'], 1.0)
 
+## deprecated
 # Recursively define a sequence of actions that can happen to a worldstate. 
-# grammar.add_rule('ACTION_SEQUENCE', '%s\n%s',    ['ACTION', 'SEQUENCE'], 1.0)
-# grammar.add_rule('SEQUENCE', '%s\n%s',    ['ACTION', 'SEQUENCE'], .1)
-# grammar.add_rule('SEQUENCE', '%s',    ['ACTION'], .5)
+grammar.add_rule('STATEMENT_SEQ', '    %s\n    %s',    ['STATEMENT', 'SEQ'], 1.0)
+grammar.add_rule('SEQ', '%s\n    %s',    ['STATEMENT', 'SEQ'], .1)
+grammar.add_rule('SEQ', '%s',    ['STATEMENT'], .1)
+grammar.add_rule('STATEMENT', '%s',    ['ACTION'], .5)
+grammar.add_rule('STATEMENT', '%s',    ['CONDITION'], .5)
 
-grammar.add_rule('ACTION_SEQ', '%s', ['ACTION_SEQ'], 1.0)
-grammar.add_rule('ACTION_SEQ', '%s', ['ACTION'], 1.0)
+# grammar.add_rule('ACTION_SEQ', '%s', ['ACTION_SEQ'], 1.0)
+# grammar.add_rule('ACTION_SEQ', '%s', ['ACTION'], 1.0)
 
+## deprecated
 # @primitive
 # def move_ball_(WS, container_0, container_1, color):
 #     return WS.moveBall(container_0, container_1, color)
@@ -28,14 +33,26 @@ grammar.add_rule('ACTION_SEQ', '%s', ['ACTION'], 1.0)
 # grammar.add_rule('ACTION', 'move_ball_', ['WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.0)
 
 
-grammar.add_rule('ACTION', '%s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.0)
+grammar.add_rule('ACTION', '%s = %s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.0)
 grammar.add_rule('WORLDSTATE', 'x', None, 1.)
 # we can do this because moveBall() method will return a WorldState object
-grammar.add_rule('WORLDSTATE', '%s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.)
+# grammar.add_rule('WORLDSTATE', '%s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.)
+grammar.add_rule('ACTION', '%s = %s.moveRandomBall(%s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER'], 1.)
 
+grammar.add_rule('CONDITION', '''if %s:
+        %s
+    else:
+        %s''', ['BOOL', 'ACTION','ACTION'], 1.)
 
-grammar.add_rule('ACTION_SEQ', '(%s if %s else %s)', ['ACTION_SEQ', 'BOOL', 'ACTION_SEQ'], 1.)
-grammar.add_rule('ACTION_SEQ', '(%s if %s else %s)', ['ACTION', 'BOOL', 'ACTION'], 1.)
+grammar.add_rule('CONDITION', '''while %s and x._itrCounter < 26:
+        %s
+        if x._itrCounter == 25:
+            x._itrCounter = 0
+            break
+        x._itrCounter += 1
+    ''', ['BOOL','ACTION'], 1.)
+
+# grammar.add_rule('ACTION_SEQ', '(%s if %s else %s)', ['ACTION', 'BOOL', 'ACTION'], 1.)
 
 grammar.add_rule('BOOL', 'x.existColor(%s, %s)', ['CONTAINER','COLOR'], 1.0)
 grammar.add_rule('BOOL', 'x.canAddBall(%s, %s)', ['CONTAINER','COLOR'], 1.0)
@@ -45,7 +62,8 @@ grammar.add_rule('BOOL', 'x.canAddBall(%s, %s)', ['CONTAINER','COLOR'], 1.0)
 # grammar.add_rule('BOOL', '(%s <= %s)', ['CONTAINER','CONTAINER'], 1.0)
 # grammar.add_rule('BOOL', '(%s > %s)', ['CONTAINER','CONTAINER'], 1.0)
 # grammar.add_rule('BOOL', '(%s < %s)', ['CONTAINER','CONTAINER'], 1.0)
-grammar.add_rule('BOOL', '(%s == %s)', ['CONTAINER','CONTAINER'], 1.0)
+grammar.add_rule('BOOL', '(x._container[%s] == x._container[%s])', ['CONTAINER','CONTAINER'], 1.0)
+grammar.add_rule('BOOL', 'x._container[%s].isEmpty()', ['CONTAINER'], 1.0)
 
 grammar.add_rule('CONTAINER', '\'bucket_0\'', None, 1.0)
 grammar.add_rule('CONTAINER', '\'bucket_1\'', None, 1.0)
@@ -66,27 +84,38 @@ from LOTlib.Hypotheses.LOTHypothesis import LOTHypothesis
 ## Define the hypothesis
 ######################################## 
 
+
 # define a 
 class MyHypothesisX(LOTHypothesis):
     def __init__(self, **kwargs):
-        LOTHypothesis.__init__(self, grammar=grammar, display="lambda x: %s", **kwargs)
+        # LOTHypothesis.__init__(self, grammar=grammar, display="lambda x: %s", **kwargs)
+        LOTHypothesis.__init__(self, grammar=grammar, display="%s", **kwargs)
     
-    def __call__(self, *args):
-        try:
-            # try to do it from the superclass
-            return LOTHypothesis.__call__(self, *args)
-        except ZeroDivisionError:
-            # and if we get an error, return nan
-            return float("nan")
+    # def __call__(self, *args):
+    #     try:
+    #         # try to do it from the superclass
+    #         return LOTHypothesis.__call__(self, *args)
+    #     except ZeroDivisionError:
+    #         # and if we get an error, return nan
+    #         return float("nan")
 
-    ## Compute likelihood in term of whether the processed input-state and end-state match 
-    # def compute_single_likelihood(self, datum):
-    #     x = deepcopy(datum.input[0])
-    #     self.__call__(x)
-    #     if x == datum.output:
-    #         return 0
-    #     else:
-    #         return -99
+    # def __call__(ws):
+    #     try: 
+    #         LOTHypothesis.__call__(self, ws) --> (some tuple) (remember zero the violation count)
+    #         return ws
+
+    def __call__(self, ws):
+    #     print '''def foo(x): \n%s \n    return x
+    # ''' % self
+        exec(
+            '''def foo(x): \n%s \n    return x
+    ''' % self)
+        worldS = foo(ws)
+        return worldS
+
+    def compile_function (self):
+        pass
+
 
     # Compute likelihood in term of difference between two world states
     def compute_single_likelihood(self, datum):
@@ -96,28 +125,15 @@ class MyHypothesisX(LOTHypothesis):
         return - ((x - datum.output)*100 + x._affordanceViolateCnt)
 
 
-    # def compute_single_likelihood(self, datum):
-    #     # x = copy(datum.input[0])
-    #     # self.__call__(x)
-    #     # if x == datum.output
-    #     if self(*datum.input) == datum.output:
-    #         return log((1.0-datum.alpha)/100. + datum.alpha)
-    #         # return 0
-    #     else:
-    #         return log((1.0-datum.alpha)/100.)
-    #         # return -99
-
 ######################################## 
 ## Define the data
 ######################################## 
 
 from LOTlib.DataAndObjects import FunctionData
 
-# Now our data takes input x=3 and maps it to 12
-# What could the function be?
 initial_state = {
-    'bucket_0': Bucket(black=1, red=0, green=0),
-    'bucket_1': Bucket(black=0, red=1, green=2),
+    'bucket_0': Bucket(black=10, red=10, green=0),
+    'bucket_1': Bucket(black=0, red=0, green=0),
     'bucket_2': Bucket(black=0, red=0, green=0),
     'bucket_3': Bucket(black=0, red=0, green=0),
     'hand_left': Hand(),
@@ -125,11 +141,11 @@ initial_state = {
 }
 
 end_state = {
-    'bucket_0': Bucket(black=1, red=0, green=1),
-    'bucket_1': Bucket(black=0, red=1, green=0),
+    'bucket_0': Bucket(black=0, red=0, green=0),
+    'bucket_1': Bucket(black=10, red=10, green=0),
     'bucket_2': Bucket(black=0, red=0, green=0),
     'bucket_3': Bucket(black=0, red=0, green=0),
-    'hand_left': Hand(green=1),
+    'hand_left': Hand(),
     'hand_right': Hand()
 }
 
@@ -158,6 +174,7 @@ h0 = MyHypothesisX()
 # # Plain running
 # for h in MHSampler(h0, data, steps=100):
 #     print h.posterior_score, h
+#     # pass
 
 
 # Running and show only the top choice 
