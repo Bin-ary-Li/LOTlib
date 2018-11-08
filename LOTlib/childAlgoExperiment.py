@@ -13,46 +13,29 @@ grammar = Grammar()
 
 grammar.add_rule('START', '', ['STATEMENT_SEQ'], 1.0)
 
-## deprecated
 # Recursively define a sequence of actions that can happen to a worldstate. 
-grammar.add_rule('STATEMENT_SEQ', '    %s\n    %s',    ['STATEMENT', 'SEQ'], 1.0)
-grammar.add_rule('SEQ', '%s\n    %s',    ['STATEMENT', 'SEQ'], .1)
-grammar.add_rule('SEQ', '%s',    ['STATEMENT'], .1)
-grammar.add_rule('STATEMENT', '%s',    ['ACTION'], .5)
-grammar.add_rule('STATEMENT', '%s',    ['CONDITION'], .5)
+grammar.add_rule('STATEMENT_SEQ', '%s\n%s',    ['STATEMENT', 'STATEMENT_SEQ'], .1)
+grammar.add_rule('STATEMENT_SEQ', '%s',    ['STATEMENT'], .1)
+grammar.add_rule('STATEMENT', '%s', ['ACTION'], .5)
+grammar.add_rule('STATEMENT', '%s', ['CONDITION'], .5)
 
-# grammar.add_rule('ACTION_SEQ', '%s', ['ACTION_SEQ'], 1.0)
-# grammar.add_rule('ACTION_SEQ', '%s', ['ACTION'], 1.0)
-
-## deprecated
-# @primitive
-# def move_ball_(WS, container_0, container_1, color):
-#     return WS.moveBall(container_0, container_1, color)
-# grammar.add_rule('WORLDSTATE', 'x', None, 1.)
-# grammar.add_rule('WORLDSTATE', 'move_ball_', ['WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.)
-# grammar.add_rule('ACTION', 'move_ball_', ['WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.0)
-
-
-grammar.add_rule('ACTION', '%s = %s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.0)
 grammar.add_rule('WORLDSTATE', 'x', None, 1.)
-# we can do this because moveBall() method will return a WorldState object
-# grammar.add_rule('WORLDSTATE', '%s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.)
+grammar.add_rule('ACTION', '%s = %s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.0)
 grammar.add_rule('ACTION', '%s = %s.moveRandomBall(%s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER'], 1.)
 
 grammar.add_rule('CONDITION', '''if %s:
-        %s
-    else:
-        %s''', ['BOOL', 'ACTION','ACTION'], 1.)
+%s}
+else:
+%s}''', ['BOOL', 'ACTION','ACTION'], 1.)
 
 grammar.add_rule('CONDITION', '''while %s and x._itrCounter < 26:
-        %s
-        if x._itrCounter == 25:
-            x._itrCounter = 0
-            break
-        x._itrCounter += 1
-    ''', ['BOOL','ACTION'], 1.)
+%s
+x._itrCounter += 1
+if x._itrCounter == 25:
+x._itrCounter = 0
+break}
+}''', ['BOOL','ACTION'], 1.)
 
-# grammar.add_rule('ACTION_SEQ', '(%s if %s else %s)', ['ACTION', 'BOOL', 'ACTION'], 1.)
 
 grammar.add_rule('BOOL', 'x.existColor(%s, %s)', ['CONTAINER','COLOR'], 1.0)
 grammar.add_rule('BOOL', 'x.canAddBall(%s, %s)', ['CONTAINER','COLOR'], 1.0)
@@ -64,6 +47,7 @@ grammar.add_rule('BOOL', 'x.canAddBall(%s, %s)', ['CONTAINER','COLOR'], 1.0)
 # grammar.add_rule('BOOL', '(%s < %s)', ['CONTAINER','CONTAINER'], 1.0)
 grammar.add_rule('BOOL', '(x._container[%s] == x._container[%s])', ['CONTAINER','CONTAINER'], 1.0)
 grammar.add_rule('BOOL', 'x._container[%s].isEmpty()', ['CONTAINER'], 1.0)
+grammar.add_rule('BOOL', 'not (%s)', ['BOOL'], 1.0)
 
 grammar.add_rule('CONTAINER', '\'bucket_0\'', None, 1.0)
 grammar.add_rule('CONTAINER', '\'bucket_1\'', None, 1.0)
@@ -74,7 +58,7 @@ grammar.add_rule('CONTAINER', '\'hand_left\'', None, 1.0)
 
 grammar.add_rule('COLOR', '\'black\'', None, 1.0)
 grammar.add_rule('COLOR', '\'red\'', None, 1.0)
-grammar.add_rule('COLOR', '\'green\'', None, 100.0)
+grammar.add_rule('COLOR', '\'green\'', None, 1.0)
 
 
 from math import log
@@ -89,32 +73,47 @@ from LOTlib.Hypotheses.LOTHypothesis import LOTHypothesis
 class MyHypothesisX(LOTHypothesis):
     def __init__(self, **kwargs):
         # LOTHypothesis.__init__(self, grammar=grammar, display="lambda x: %s", **kwargs)
-        LOTHypothesis.__init__(self, grammar=grammar, display="%s", **kwargs)
-    
-    # def __call__(self, *args):
-    #     try:
-    #         # try to do it from the superclass
-    #         return LOTHypothesis.__call__(self, *args)
-    #     except ZeroDivisionError:
-    #         # and if we get an error, return nan
-    #         return float("nan")
-
-    # def __call__(ws):
-    #     try: 
-    #         LOTHypothesis.__call__(self, ws) --> (some tuple) (remember zero the violation count)
-    #         return ws
+        # LOTHypothesis.__init__(self, grammar=grammar, display='''def foo(x): \n%s \n    return x''', **kwargs)
+        LOTHypothesis.__init__(self, grammar=grammar, display='''def foo(x): \n%s\n    return x''', **kwargs)
 
     def __call__(self, ws):
-    #     print '''def foo(x): \n%s \n    return x
-    # ''' % self
-        exec(
-            '''def foo(x): \n%s \n    return x
-    ''' % self)
+        # rawCode = str(self)
+        parsedCode = self.code_compilation(str(self))
+        # print '''def foo(x): \n%s \n    return x''' % parsedCode
+        # exec('''def foo(x): \n%s \n    return x''' % parsedCode)
+        # print '''%s''' % parsedCode
+        exec('''%s''' % parsedCode)
         worldS = foo(ws)
         return worldS
 
+
     def compile_function (self):
         pass
+
+    def code_compilation (self, code):
+        indentCnt = 1
+        parsedCodeList = []
+        firstLine = code.split('\n')[0]
+        lastLine = code.split('\n')[-1]
+        parsedCodeList.append(firstLine)
+        codeList = code.split('\n')[1:-1]
+        def checkLine(line, indentCnt):
+            if line[-1:] == ":":
+                indentCnt += 1
+            elif line[-1:] == "}":
+                indentCnt -= 1
+            return indentCnt
+        for line in codeList:
+            parsedCodeList.append('    '*indentCnt + line)
+            indentCnt = checkLine(line, indentCnt)
+        for index, line in enumerate(parsedCodeList):
+            if line[-1:] == "}":
+                parsedCodeList[index] = line[:-1]
+        if lastLine[-1:] == "}":
+            lastLine = lastLine[:-1]
+        parsedCodeList.append(lastLine)
+        parsedCode = '\n'.join(parsedCodeList)
+        return parsedCode
 
 
     # Compute likelihood in term of difference between two world states
@@ -160,7 +159,8 @@ data = [ FunctionData(input=[WS_initial], output=WS_end, alpha=0.95) ]
 #########################
 # for _ in xrange(20):
 #     t = grammar.generate()
-#     print grammar.log_probability(t), t 
+#     # print grammar.log_probability(t), t 
+#     print t
 
 
 ####################################### 
@@ -173,8 +173,8 @@ h0 = MyHypothesisX()
 
 # # Plain running
 # for h in MHSampler(h0, data, steps=100):
-#     print h.posterior_score, h
-#     # pass
+#     # print h.posterior_score, h
+#     pass
 
 
 # Running and show only the top choice 
