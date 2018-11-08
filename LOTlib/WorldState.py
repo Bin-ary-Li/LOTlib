@@ -26,8 +26,8 @@ hand_left = Hand(red=1)
 
 """
 Accordance_Penalty = {
-	'low' : 1,
-	'medium': 10,
+	'low' : 10,
+	'medium': 40,
 	'high': 100
 }
 
@@ -282,7 +282,7 @@ class WorldState():
 			elif not self.existColor(from_container, color, number) and not self.canAddBall(to_container, number):
 				self._affordanceViolateCnt += Accordance_Penalty['high']
 			if from_container == to_container: 
-				self._affordanceViolateCnt += Accordance_Penalty['low']
+				self._affordanceViolateCnt += Accordance_Penalty['medium']
 		checkAffordance(self, from_container, to_container, color, number=1)
 
 		if self.existColor(from_container, color, number) and self.canAddBall(to_container, number):
