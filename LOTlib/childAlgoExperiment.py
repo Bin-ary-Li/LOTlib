@@ -210,7 +210,9 @@ topChoice = TopN(N=10)
 steps = []
 posProbs = []
 
-for step, h in enumerate(MHSampler(h0, data, steps=10000)):
+for step, h in enumerate(MHSampler(h0, data, steps=100000)):
+    if step % 5000 == 0:
+        print ('current step: %d, current posterior score: %f' % (step, h.posterior_score))
     steps.append(step)
     posProbs.append(h.posterior_score)
     topChoice.add(h)
@@ -224,4 +226,6 @@ import matplotlib.pyplot as plt
 stepArray = np.asarray(steps)
 posProbArray = np.asarray(posProbs)
 plt.plot(stepArray,posProbArray)
+plt.ylabel('likelihood')
+plt.xlabel('step')
 plt.show()
