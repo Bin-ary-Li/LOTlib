@@ -1,4 +1,4 @@
-from LOTlib.WorldState import *
+from WorldState import *
 from LOTlib.Eval import primitive
 from copy import deepcopy
 
