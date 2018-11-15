@@ -14,27 +14,39 @@ grammar = Grammar()
 grammar.add_rule('START', '', ['STATEMENT_SEQ'], 1.0)
 
 # Recursively define a sequence of actions that can happen to a worldstate. 
-grammar.add_rule('STATEMENT_SEQ', '%s\n%s',    ['STATEMENT', 'STATEMENT_SEQ'], .1)
-grammar.add_rule('STATEMENT_SEQ', '%s',    ['STATEMENT'], .1)
-grammar.add_rule('STATEMENT', '%s', ['ACTION'], .5)
-grammar.add_rule('STATEMENT', '%s', ['CONDITION'], .5)
+grammar.add_rule('STATEMENT_SEQ', '%s\n%s',    ['STATEMENT', 'STATEMENT_SEQ'], 1.)
+grammar.add_rule('STATEMENT_SEQ', '%s',    ['STATEMENT'], 1.)
+grammar.add_rule('STATEMENT', '%s', ['ACTION'], 1.)
+grammar.add_rule('STATEMENT', '%s', ['CONDITION'], 1.)
 
 grammar.add_rule('WORLDSTATE', 'x', None, 1.)
-grammar.add_rule('ACTION', '%s = %s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.0)
+grammar.add_rule('ACTION', '%s = %s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.)
 grammar.add_rule('ACTION', '%s = %s.moveRandomBall(%s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER'], 1.)
+grammar.add_rule('ACTION', 'pass', None, .1)
 
-grammar.add_rule('CONDITION', '''if %s:
+grammar.add_rule('CONDITION', '%s', ['IF_STATEMENT'], 1.)
+grammar.add_rule('CONDITION', '%s', ['WHILE_LOOP'], 1.)
+
+grammar.add_rule('IF_STATEMENT', '''if %s:
 %s}
 else:
 %s}''', ['BOOL', 'ACTION','ACTION'], 1.)
 
-grammar.add_rule('CONDITION', '''while %s and x._itrCounter < 26:
+grammar.add_rule('WHILE_LOOP', '''while %s and x._itrCounter < 26:
 %s
 x._itrCounter += 1
 if x._itrCounter == 25:
 x._itrCounter = 0
 break}
 }''', ['BOOL','ACTION'], 1.)
+
+grammar.add_rule('WHILE_LOOP', '''while %s and x._itrCounter < 26:
+%s
+x._itrCounter += 1
+if x._itrCounter == 25:
+x._itrCounter = 0
+break}
+}''', ['BOOL','IF_STATEMENT'], 1.)
 
 
 grammar.add_rule('BOOL', 'x.existColor(%s, %s)', ['CONTAINER','COLOR'], 1.0)
@@ -130,29 +142,44 @@ class MyHypothesisX(LOTHypothesis):
 
 from LOTlib.DataAndObjects import FunctionData
 
-initial_state = {
-    'bucket_0': Bucket(black=10, red=10, green=0),
+initial_state_0 = {
+    'bucket_0': Bucket(black=1, red=0, green=0),
+    'bucket_1': Bucket(black=0, red=3, green=3),
+    'bucket_2': Bucket(black=0, red=0, green=0),
+    'bucket_3': Bucket(black=0, red=0, green=0),
+    'hand_left': Hand(),
+    'hand_right': Hand()
+}
+
+end_state_0 = {
+    'bucket_0': Bucket(black=1, red=0, green=0),
     'bucket_1': Bucket(black=0, red=0, green=0),
-    'bucket_2': Bucket(black=0, red=0, green=0),
-    'bucket_3': Bucket(black=0, red=0, green=0),
+    'bucket_2': Bucket(black=0, red=3, green=0),
+    'bucket_3': Bucket(black=0, red=0, green=3),
     'hand_left': Hand(),
     'hand_right': Hand()
 }
 
-end_state = {
-    'bucket_0': Bucket(black=0, red=0, green=0),
-    'bucket_1': Bucket(black=10, red=10, green=0),
-    'bucket_2': Bucket(black=0, red=0, green=0),
-    'bucket_3': Bucket(black=0, red=0, green=0),
-    'hand_left': Hand(),
-    'hand_right': Hand()
+initial_state_1 = {
+    'bucket_0': Bucket(black=1, red=0, green=0),
+    'bucket_1': Bucket(black=0, red=3, green=5),
 }
 
-WS_initial = WorldState(initial_state)
-WS_end = WorldState(end_state)
+end_state_1 = {
+    'bucket_0': Bucket(black=1, red=0, green=0),
+    'bucket_2': Bucket(black=0, red=3, green=0),
+    'bucket_3': Bucket(black=0, red=0, green=5),
+}
+
+WS0_initial = WorldState(initial_state_0)
+WS0_end = WorldState(end_state_0)
+
+WS1_initial = WorldState(initial_state_1)
+WS1_end = WorldState(end_state_1)
 
 
-data = [ FunctionData(input=[WS_initial], output=WS_end, alpha=0.95) ]
+# data = [ FunctionData(input=[WS0_initial], output=WS0_end, alpha=0.95) ]
+data = [ FunctionData(input=[WS0_initial], output=WS0_end, alpha=0.95), FunctionData(input=[WS1_initial], output=WS1_end, alpha=0.95)]
 
 ########################
 ## Testing Grammar
@@ -180,8 +207,21 @@ h0 = MyHypothesisX()
 # Running and show only the top choice 
 from LOTlib.TopN import TopN
 topChoice = TopN(N=10)
+steps = []
+posProbs = []
 
-for h in MHSampler(h0, data, steps=10000):
+for step, h in enumerate(MHSampler(h0, data, steps=10000)):
+    steps.append(step)
+    posProbs.append(h.posterior_score)
     topChoice.add(h)
 for h in topChoice.get_all(sorted=True):
     print h.posterior_score, h
+
+# Plotting
+import numpy as np
+import matplotlib.pyplot as plt
+
+stepArray = np.asarray(steps)
+posProbArray = np.asarray(posProbs)
+plt.plot(stepArray,posProbArray)
+plt.show()
