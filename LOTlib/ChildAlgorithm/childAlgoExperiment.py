@@ -222,10 +222,13 @@ for h in topChoice.get_all(sorted=True):
 # Plotting
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
 
 stepArray = np.asarray(steps)
 posProbArray = np.asarray(posProbs)
 plt.plot(stepArray,posProbArray)
 plt.ylabel('likelihood')
 plt.xlabel('step')
-plt.savefig('./childAlgoResultPlot/sorting_step_prob.png')
+currentTime = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
+plt.savefig('./childAlgoResultPlot/sorting_step_prob_' + currentTime + '.png')
+
