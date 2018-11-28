@@ -209,7 +209,7 @@ topChoice = TopN(N=10)
 steps = []
 posProbs = []
 
-for step, h in enumerate(MHSampler(h0, data, steps=100000)):
+for step, h in enumerate(MHSampler(h0, data, steps=1000)):
     if step % 5000 == 0:
         print ('current step: %d, current posterior score: %f' % (step, h.posterior_score))
     steps.append(step)
@@ -220,6 +220,8 @@ for h in topChoice.get_all(sorted=True):
 
 # Plotting
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import datetime
 
