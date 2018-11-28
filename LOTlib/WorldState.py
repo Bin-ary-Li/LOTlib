@@ -1,4 +1,3 @@
-from LOTlib.Miscellaneous import self_update
 from sets import Set
 import sys
 import random
