@@ -76,6 +76,18 @@ class Container(object):
 		countDiff = abs(selfCount - otherCount)
 		return colorDiff + countDiff
 
+	def __gt__(self, other):
+		return self.get_content_amount() > other.get_content_amount()
+
+	def __ge__(self, other):
+		return self.get_content_amount() >= other.get_content_amount()
+
+	def __lt__(self, other):
+		return self.get_content_amount() < other.get_content_amount()
+
+	def __le__(self, other):
+		return self.get_content_amount() <= other.get_content_amount()
+
 	def __str__(self):
 		outstr = '<'
 		for color, number in self._contents.items():
@@ -90,22 +102,21 @@ class Container(object):
 		for color, number in self._contents.items():
 			number = 0
 
-class Bucket(Container): # Bucket as a subclass of Container
-	def __init__(self, *args, **kwargs):
-		super(Bucket, self).__init__(**kwargs)
-		for arg in args: # Duplicate from other Bucket object passed in argument
-			if isinstance(arg, Bucket):
-				for color, number in arg._contents.items():
-					self._contents[color] = number
-			else:
-				sys.exit('[Error]: expect a Bucket object.')
-		self._capacity = 1000 
+	def get_content_amount(self):
+		content_amount = 0
+		for color, number in self._contents.items():
+			content_amount += number
+		return content_amount
 
 	def get_vacancy(self): # check Bucket vacancy
 		vacancy = self._capacity
-		for color, number in self._contents.items():
-			vacancy = vacancy - number
+		vacancy -= self.get_content_amount()
 		return vacancy
+
+class Bucket(Container): # Bucket as a subclass of Container
+	def __init__(self, *args, **kwargs):
+		super(Bucket, self).__init__(**kwargs)
+		self._capacity = 1000 
 
 	def isEmpty(self):
 		return self.get_vacancy() == self._capacity
@@ -113,20 +124,13 @@ class Bucket(Container): # Bucket as a subclass of Container
 
 class Hand(Container): # Bucket as a subclass of Container
 	def __init__(self, *args, **kwargs):
-		super(Hand, self).__init__(**kwargs)
-		for arg in args:
-			if isinstance(arg, Hand):
-				for color, number in arg._contents.items():
-					self._contents[color] = number
-			else:
-				sys.exit('[Error]: expect a Hand object.')
 		self._capacity = 3 # Hand has much smaller capacity
-
-	def get_vacancy(self):
-		vacancy = self._capacity
-		for color, number in self._contents.items():
-			vacancy = vacancy - number
-		return vacancy
+		handTotal = 0
+		for color, number in kwargs.items(): # check if exceed capacity
+			handTotal += number
+			if handTotal > 3:
+				sys.exit('[Error]: Hand cannot hold more than 3 items.')
+		super(Hand, self).__init__(**kwargs)
 
 	def isEmpty(self):
 		return self.get_vacancy() == self._capacity

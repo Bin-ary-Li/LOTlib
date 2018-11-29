@@ -1,28 +1,33 @@
-from LOTlib.WorldState import *
+from WorldState import *
+from copy import deepcopy
 
-init_state = {
-	'bucket_0': Bucket(black=1, red=0, green=0),
-	'bucket_1': Bucket(black=0, red=4, green=4),
-	'bucket_2': Bucket(black=0, red=0, green=0),
-	'bucket_3': Bucket(black=0, red=0, green=0),
-	'hand_right': Hand(black=1),
-	'hand_left': Hand(),
-}
+# init_state = {
+# 	'bucket_0': Bucket(black=1, red=0, green=0),
+# 	'bucket_1': Bucket(black=0, red=4, green=4),
+# 	'bucket_2': Bucket(black=0, red=0, green=0),
+# 	'bucket_3': Bucket(black=0, red=0, green=0),
+# 	'hand_right': Hand(black=1),
+# 	'hand_left': Hand(),
+# }
 
 
-WS_0 = WorldState(init_state)
-WS_0.moveBall('hand_right', 'hand_right', 'green').moveBall('bucket_0','bucket_3','black')
+# WS_0 = WorldState(init_state)
+# WS_0.moveBall('hand_right', 'hand_right', 'green').moveBall('bucket_0','bucket_3','black')
 
-end_state = {
-	'bucket_3': Bucket(black=2, red=3, green=4),
-	'hand_right': Hand(red=1)
-}
+# end_state = {
+# 	'bucket_3': Bucket(black=2, red=3, green=4),
+# 	'hand_right': Hand(red=1)
+# }
 
-WS_1 = WorldState(end_state)
+# WS_1 = WorldState(end_state)
 
-WS_2 = WorldState(init_state)
+# WS_2 = WorldState(init_state)
 
-assert WS_0 - WS_2 == WS_2 - WS_0
+hand_0 = Bucket(black=1, red=1, green=1)
+hand_1 = deepcopy(hand_0)
+hand_1 = Bucket(black=0, red=1, green=0)
+
+print hand_0.get_content_amount(), hand_1.get_content_amount()
 
 # print WS_0, WS_1, WS_0 - WS_1
 
