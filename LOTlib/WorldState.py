@@ -214,7 +214,6 @@ class WorldState():
 			'bucket_3': Bucket(),
 			'hand_left': Hand(),
 			'hand_right': Hand()
-
 		}
 		self.setWorldState(*args)
 		self._affordanceViolateCnt = 0
@@ -257,9 +256,11 @@ class WorldState():
 			container.remove_all_contents()
 		for container_name, container in state.items():
 			if isinstance(container, Bucket):
-				self._container[container_name] = Bucket(container)
+				# self._container[container_name] = Bucket(container)
+				self._container[container_name] = container
 			elif isinstance(container, Hand):
-				self._container[container_name] = Hand(container)
+				# self._container[container_name] = Hand(container)
+				self._container[container_name] = container
 			else:
 				sys.exit('[Error]: expect Bucket object or Hand object.') 
 
@@ -301,3 +302,32 @@ class WorldState():
 					existedBalls.append (color)
 			self = self.moveBall(from_container, to_container, random.choice(existedBalls))
 		return self
+
+	def grabBall(self, from_bucket, to_hand, color): 
+		assert isinstance(self._container[from_bucket], Bucket), "Not drawing from a Bucket object"
+		assert isinstance(self._container[to_hand], Hand), "Not drawing to a Hand obect"
+		assert from_bucket in self._container, "Incorrect source container name: "+ from_container
+		assert to_hand in self._container, "Incorrect target container name: "+ to_container
+
+		return self.moveBall(from_bucket, to_hand, color)
+
+	def dropBall(self, from_hand, to_bucket, color):
+		assert isinstance(self._container[to_bucket], Bucket), "Not drawing to a Bucket object"
+		assert isinstance(self._container[from_hand], Hand), "Not drawing from a Hand obect"
+		assert from_hand in self._container, "Incorrect source container name: "+ from_container
+		assert to_bucket in self._container, "Incorrect target container name: "+ to_container
+
+		return self.moveBall(from_hand, to_bucket, color)
+
+	def grabRandomBall(self, from_bucket, to_hand): 
+		assert isinstance(self._container[from_bucket], Bucket), "Not drawing from a Bucket object"
+		assert isinstance(self._container[to_hand], Hand), "Not drawing to a Hand obect"
+		assert from_bucket in self._container, "Incorrect source container name: "+ from_container
+		assert to_hand in self._container, "Incorrect target container name: "+ to_container
+
+		return self.moveRandomBall(from_bucket, to_hand)
+
+
+
+
+

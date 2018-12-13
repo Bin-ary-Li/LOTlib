@@ -2,6 +2,8 @@ from WorldState import *
 from copy import deepcopy
 
 
+algorithmName = "sorting"
+
 ######################################## 
 ## Define a grammar
 ######################################## 
@@ -21,6 +23,9 @@ grammar.add_rule('STATEMENT', '%s', ['CONDITION'], 1.)
 grammar.add_rule('WORLDSTATE', 'x', None, 1.)
 grammar.add_rule('ACTION', '%s = %s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.)
 grammar.add_rule('ACTION', '%s = %s.moveRandomBall(%s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER'], 1.)
+grammar.add_rule('ACTION', '%s = %s.grabBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'BUCKET', 'HAND', 'COLOR'], 1.)
+grammar.add_rule('ACTION', '%s = %s.dropBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'HAND', 'BUCKET', 'COLOR'], 1.)
+grammar.add_rule('ACTION', '%s = %s.grabRandomBall(%s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'BUCKET', 'HAND'], 1.)
 grammar.add_rule('ACTION', 'pass', None, .1)
 
 grammar.add_rule('CONDITION', '%s', ['IF_STATEMENT'], 1.)
@@ -31,10 +36,10 @@ grammar.add_rule('IF_STATEMENT', '''if %s:
 else:
 %s}''', ['BOOL', 'ACTION','ACTION'], 1.)
 
-grammar.add_rule('WHILE_LOOP', '''while %s and x._itrCounter < 26:
+grammar.add_rule('WHILE_LOOP', '''while %s and x._itrCounter < 51:
 %s
 x._itrCounter += 1
-if x._itrCounter == 25:
+if x._itrCounter == 50:
 x._itrCounter = 0
 break}
 }''', ['BOOL','ACTION'], 1.)
@@ -61,12 +66,15 @@ grammar.add_rule('BOOL', 'not (%s)', ['BOOL'], 1.0)
 grammar.add_rule('BOOL', 'True', None, .1)
 grammar.add_rule('BOOL', 'False', None, .1)
 
-grammar.add_rule('CONTAINER', '\'bucket_0\'', None, 1.0)
-grammar.add_rule('CONTAINER', '\'bucket_1\'', None, 1.0)
-grammar.add_rule('CONTAINER', '\'bucket_2\'', None, 1.0)
-grammar.add_rule('CONTAINER', '\'bucket_3\'', None, 1.0)
-grammar.add_rule('CONTAINER', '\'hand_right\'', None, 5.0)
-grammar.add_rule('CONTAINER', '\'hand_left\'', None, 1.0)
+grammar.add_rule('CONTAINER', '%s', ['BUCKET'], 1.)
+grammar.add_rule('CONTAINER', '%s', ['HAND'], 1.)
+
+grammar.add_rule('BUCKET', '\'bucket_0\'', None, 1.0)
+grammar.add_rule('BUCKET', '\'bucket_1\'', None, 1.0)
+grammar.add_rule('BUCKET', '\'bucket_2\'', None, 1.0)
+grammar.add_rule('BUCKET', '\'bucket_3\'', None, 1.0)
+grammar.add_rule('HAND', '\'hand_right\'', None, 5.0)
+grammar.add_rule('HAND', '\'hand_left\'', None, 1.0)
 
 grammar.add_rule('COLOR', '\'black\'', None, 1.0)
 grammar.add_rule('COLOR', '\'red\'', None, 1.0)
@@ -81,7 +89,6 @@ from LOTlib.Hypotheses.LOTHypothesis import LOTHypothesis
 ######################################## 
 
 
-# define a 
 class MyHypothesisX(LOTHypothesis):
     def __init__(self, **kwargs):
         LOTHypothesis.__init__(self, grammar=grammar, display='''def foo(x): \n%s\n    return x''', **kwargs)
@@ -216,18 +223,34 @@ h0 = MyHypothesisX()
 #         print h.posterior_score
 
 
+
 # Running and show only the top choice 
 from LOTlib.TopN import TopN
 topChoice = TopN(N=10)
-steps = []
 posProbs = []
+stepNum = 30000
 
-for step, h in enumerate(MHSampler(h0, make_data(data_size=2), steps=100000)):
+for step, h in enumerate(MHSampler(h0, make_data(data_size=1), steps=stepNum)):
     if step % 5000 == 0:
         print ('current step: %d, current posterior score: %f' % (step, h.posterior_score))
-    steps.append(step)
     posProbs.append(h.posterior_score)
     topChoice.add(h)
+    h0 = h
+
+
+for step, h in enumerate(MHSampler(h0, make_data(data_size=2), steps=stepNum)):
+    if step % 5000 == 0:
+        print ('current step: %d, current posterior score: %f' % (step, h.posterior_score))
+    posProbs.append(h.posterior_score)
+    topChoice.add(h)
+    h0 = h
+
+for step, h in enumerate(MHSampler(h0, make_data(data_size=3), steps=stepNum)):
+    if step % 5000 == 0:
+        print ('current step: %d, current posterior score: %f' % (step, h.posterior_score))
+    posProbs.append(h.posterior_score)
+    topChoice.add(h)
+    h0 = h
 
 for h in topChoice.get_all(sorted=True):
     print h.posterior_score, h
@@ -239,11 +262,32 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import datetime
 
-stepArray = np.asarray(steps)
+stepArray = np.arange(len(posProbs))
 posProbArray = np.asarray(posProbs)
-plt.plot(stepArray,posProbArray)
-plt.ylabel('likelihood')
-plt.xlabel('step')
+
+# # If running for single data point: 
+# plt.plot(stepArray, posProbArray) 
+# plt.xlabel('Step')
+# plt.ylabel('Likelihood')
+
+
+# If running for multiple data points: 
+
+dataPt1 = np.ma.masked_where(stepArray < 0, stepArray)
+dataPt2 = np.ma.masked_where( stepArray < stepNum , stepArray)
+dataPt3 = np.ma.masked_where(stepArray < stepNum*2, stepArray)
+
+plt.plot(dataPt1, posProbArray, 'r-', label='w/ 1 dataPt') 
+plt.plot(dataPt2, posProbArray, 'g-', label='w/ 2 dataPt') 
+plt.plot(dataPt3, posProbArray, 'b-', label='w/ 3 dataPt')
+plt.xlabel('Step')
+plt.ylabel('Likelihood')
+
+plt.legend(loc='lower left')
+
+
+# Save plot
 currentTime = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
-plt.savefig('./childAlgoResultPlot/sorting_step_prob_' + currentTime + '.png')
+plt.savefig('./childAlgoResultPlot/' + algorithmName + '_' + currentTime + '.png')
+
 

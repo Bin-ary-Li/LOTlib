@@ -1,18 +1,22 @@
 from WorldState import *
 from copy import deepcopy
 
-# init_state = {
-# 	'bucket_0': Bucket(black=1, red=0, green=0),
-# 	'bucket_1': Bucket(black=0, red=4, green=4),
-# 	'bucket_2': Bucket(black=0, red=0, green=0),
-# 	'bucket_3': Bucket(black=0, red=0, green=0),
-# 	'hand_right': Hand(black=1),
-# 	'hand_left': Hand(),
-# }
+init_state = {
+	'bucket_0': Bucket(black=1, red=0, green=0),
+	'bucket_1': Bucket(black=0, red=4, green=4),
+	'bucket_2': Bucket(black=0, red=0, green=0),
+	'bucket_3': Bucket(black=0, red=0, green=0),
+	'hand_right': Hand(),
+	'hand_left': Hand(),
+}
 
 
-# WS_0 = WorldState(init_state)
-# WS_0.moveBall('hand_right', 'hand_right', 'green').moveBall('bucket_0','bucket_3','black')
+WS_0 = WorldState(init_state)
+print WS_0
+WS_0.grabBall('bucket_0', 'hand_right', 'black')
+print WS_0
+WS_0.dropBall('hand_right','bucket_3','black')
+print WS_0
 
 # end_state = {
 # 	'bucket_3': Bucket(black=2, red=3, green=4),
@@ -21,15 +25,8 @@ from copy import deepcopy
 
 # WS_1 = WorldState(end_state)
 
-# WS_2 = WorldState(init_state)
+# # WS_2 = WorldState(init_state)
 
-hand_0 = Bucket(black=1, red=1, green=1)
-hand_1 = deepcopy(hand_0)
-hand_1 = Bucket(black=0, red=1, green=0)
-
-print hand_0.get_content_amount(), hand_1.get_content_amount()
-
-# print WS_0, WS_1, WS_0 - WS_1
 
 # def testWorldStateEqual():
 # 	WS_0 = WorldState(init_state)
