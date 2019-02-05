@@ -1,8 +1,12 @@
 from WorldState import *
 from copy import deepcopy
+from collections import Counter
 
 
 algorithmName = "sorting"
+
+## testing param
+wsHistoryList = []
 
 ######################################## 
 ## Define a grammar
@@ -23,9 +27,9 @@ grammar.add_rule('STATEMENT', '%s', ['CONDITION'], 1.)
 grammar.add_rule('WORLDSTATE', 'x', None, 1.)
 grammar.add_rule('ACTION', '%s = %s.moveBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER', 'COLOR'], 1.)
 grammar.add_rule('ACTION', '%s = %s.moveRandomBall(%s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'CONTAINER', 'CONTAINER'], 1.)
-grammar.add_rule('ACTION', '%s = %s.grabBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'BUCKET', 'HAND', 'COLOR'], 1.)
-grammar.add_rule('ACTION', '%s = %s.dropBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'HAND', 'BUCKET', 'COLOR'], 1.)
-grammar.add_rule('ACTION', '%s = %s.grabRandomBall(%s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'BUCKET', 'HAND'], 1.)
+# grammar.add_rule('ACTION', '%s = %s.grabBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'BUCKET', 'HAND', 'COLOR'], 1.)
+# grammar.add_rule('ACTION', '%s = %s.dropBall(%s, %s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'HAND', 'BUCKET', 'COLOR'], 1.)
+# grammar.add_rule('ACTION', '%s = %s.grabRandomBall(%s, %s)', ['WORLDSTATE', 'WORLDSTATE', 'BUCKET', 'HAND'], 1.)
 grammar.add_rule('ACTION', 'pass', None, .1)
 
 grammar.add_rule('CONDITION', '%s', ['IF_STATEMENT'], 1.)
@@ -36,19 +40,19 @@ grammar.add_rule('IF_STATEMENT', '''if %s:
 else:
 %s}''', ['BOOL', 'ACTION','ACTION'], 1.)
 
-grammar.add_rule('WHILE_LOOP', '''while %s and x._itrCounter < 51:
+grammar.add_rule('WHILE_LOOP', '''while %s and x.getItrCounter() < 36:
 %s
-x._itrCounter += 1
-if x._itrCounter == 50:
-x._itrCounter = 0
+x.incItrCounter()
+if x.getItrCounter() == 35:
+x.resetItrCounter()
 break}
 }''', ['BOOL','ACTION'], 1.)
 
-grammar.add_rule('WHILE_LOOP', '''while %s and x._itrCounter < 26:
+grammar.add_rule('WHILE_LOOP', '''while %s and x.getItrCounter() < 36:
 %s
-x._itrCounter += 1
-if x._itrCounter == 25:
-x._itrCounter = 0
+x.incItrCounter()
+if x.getItrCounter() == 35:
+x.resetItrCounter()
 break}
 }''', ['BOOL','IF_STATEMENT'], 1.)
 
@@ -60,8 +64,8 @@ grammar.add_rule('BOOL', '(%s >= %s)', ['CONTAINER','CONTAINER'], 1.0)
 grammar.add_rule('BOOL', '(%s <= %s)', ['CONTAINER','CONTAINER'], 1.0)
 grammar.add_rule('BOOL', '(%s > %s)', ['CONTAINER','CONTAINER'], 1.0)
 grammar.add_rule('BOOL', '(%s < %s)', ['CONTAINER','CONTAINER'], 1.0)
-grammar.add_rule('BOOL', '(x._container[%s] == x._container[%s])', ['CONTAINER','CONTAINER'], 1.0)
-grammar.add_rule('BOOL', 'x._container[%s].isEmpty()', ['CONTAINER'], 1.0)
+grammar.add_rule('BOOL', '(x.getContainer(%s) == x.getContainer(%s))', ['CONTAINER','CONTAINER'], 1.0)
+grammar.add_rule('BOOL', 'x.getContainer(%s).isEmpty()', ['CONTAINER'], 1.0)
 grammar.add_rule('BOOL', 'not (%s)', ['BOOL'], 1.0)
 grammar.add_rule('BOOL', 'True', None, .1)
 grammar.add_rule('BOOL', 'False', None, .1)
@@ -91,12 +95,12 @@ from LOTlib.Hypotheses.LOTHypothesis import LOTHypothesis
 
 class MyHypothesisX(LOTHypothesis):
     def __init__(self, **kwargs):
-        LOTHypothesis.__init__(self, grammar=grammar, display='''def foo(x): \n%s\n    return x''', **kwargs)
+        LOTHypothesis.__init__(self, grammar=grammar, display='''def algo(x): \n%s\n    return x''', **kwargs)
 
     def __call__(self, ws):
         parsedCode = self.code_compilation(str(self))
         exec('''%s''' % parsedCode)
-        worldS = foo(ws)
+        worldS = algo(ws)
         return worldS
 
 
@@ -131,10 +135,12 @@ class MyHypothesisX(LOTHypothesis):
 
     # Compute likelihood in term of difference between two world states
     def compute_single_likelihood(self, datum):
-        x = deepcopy(datum.input[0])
-        self.__call__(x)
-        assert isinstance(x - datum.output, int), 'subtraction result is not an int'
-        return - ((x - datum.output)*100 + x._affordanceViolateCnt)
+        inputWorld = deepcopy(datum.input[0])
+        outputWorld = self.__call__(inputWorld)
+        assert isinstance(outputWorld.getSnippetWS() - datum.output.getSnippetWS(), int), 'subtraction result is not an int'
+        # print map(lambda x: x - datum.output.getSnippetWS(), outputWorld.getHistory())
+        wsHistoryList.append(map(lambda x: x - datum.output.getSnippetWS(), outputWorld.getHistory()))
+        return - ((outputWorld.getSnippetWS() - datum.output.getSnippetWS())*100 + outputWorld.getAffordanceViolateCnt())
 
 
 ######################################## 
@@ -228,7 +234,7 @@ h0 = MyHypothesisX()
 from LOTlib.TopN import TopN
 topChoice = TopN(N=10)
 posProbs = []
-stepNum = 30000
+stepNum = 40000
 
 for step, h in enumerate(MHSampler(h0, make_data(data_size=1), steps=stepNum)):
     if step % 5000 == 0:
@@ -237,23 +243,29 @@ for step, h in enumerate(MHSampler(h0, make_data(data_size=1), steps=stepNum)):
     topChoice.add(h)
     h0 = h
 
+# for step, h in enumerate(MHSampler(h0, make_data(data_size=2), steps=stepNum)):
+#     if step % 5000 == 0:
+#         print ('current step: %d, current posterior score: %f' % (step, h.posterior_score))
+#     posProbs.append(h.posterior_score)
+#     topChoice.add(h)
+#     h0 = h
 
-for step, h in enumerate(MHSampler(h0, make_data(data_size=2), steps=stepNum)):
-    if step % 5000 == 0:
-        print ('current step: %d, current posterior score: %f' % (step, h.posterior_score))
-    posProbs.append(h.posterior_score)
-    topChoice.add(h)
-    h0 = h
-
-for step, h in enumerate(MHSampler(h0, make_data(data_size=3), steps=stepNum)):
-    if step % 5000 == 0:
-        print ('current step: %d, current posterior score: %f' % (step, h.posterior_score))
-    posProbs.append(h.posterior_score)
-    topChoice.add(h)
-    h0 = h
+# for step, h in enumerate(MHSampler(h0, make_data(data_size=3), steps=stepNum)):
+#     if step % 5000 == 0:
+#         print ('current step: %d, current posterior score: %f' % (step, h.posterior_score))
+#     posProbs.append(h.posterior_score)
+#     topChoice.add(h)
+#     h0 = h
 
 for h in topChoice.get_all(sorted=True):
     print h.posterior_score, h
+
+wsHistoryListTuple = map(tuple, wsHistoryList)
+historyC = Counter(wsHistoryListTuple)
+
+print "\n\n\n\n\n----<history of world state>------\b"
+print historyC.most_common(100)
+print "\b----<history of world state>------\n\n\n\n\n"
 
 # Plotting
 import numpy as np
@@ -265,25 +277,25 @@ import datetime
 stepArray = np.arange(len(posProbs))
 posProbArray = np.asarray(posProbs)
 
-# # If running for single data point: 
-# plt.plot(stepArray, posProbArray) 
-# plt.xlabel('Step')
-# plt.ylabel('Likelihood')
-
-
-# If running for multiple data points: 
-
-dataPt1 = np.ma.masked_where(stepArray < 0, stepArray)
-dataPt2 = np.ma.masked_where( stepArray < stepNum , stepArray)
-dataPt3 = np.ma.masked_where(stepArray < stepNum*2, stepArray)
-
-plt.plot(dataPt1, posProbArray, 'r-', label='w/ 1 dataPt') 
-plt.plot(dataPt2, posProbArray, 'g-', label='w/ 2 dataPt') 
-plt.plot(dataPt3, posProbArray, 'b-', label='w/ 3 dataPt')
+# If running for single data point: 
+plt.plot(stepArray, posProbArray) 
 plt.xlabel('Step')
 plt.ylabel('Likelihood')
 
-plt.legend(loc='lower left')
+
+# # If running for multiple data points: 
+
+# dataPt1 = np.ma.masked_where(stepArray < 0, stepArray)
+# dataPt2 = np.ma.masked_where( stepArray < stepNum , stepArray)
+# dataPt3 = np.ma.masked_where(stepArray < stepNum*2, stepArray)
+
+# plt.plot(dataPt1, posProbArray, 'r-', label='w/ 1 dataPt') 
+# plt.plot(dataPt2, posProbArray, 'g-', label='w/ 2 dataPt') 
+# plt.plot(dataPt3, posProbArray, 'b-', label='w/ 3 dataPt')
+# plt.xlabel('Step')
+# plt.ylabel('Likelihood')
+
+# plt.legend(loc='lower left')
 
 
 # Save plot

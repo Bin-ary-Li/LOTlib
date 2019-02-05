@@ -2,16 +2,51 @@ from LOTlib.DataAndObjects import FunctionData
 import random
 from WorldState import *
 
-# # data for "sorting" algorithm
+# data for "sorting" algorithm
+initial_state_0 = {
+    'bucket_0': Bucket(black=0, red=0, green=0),
+    'bucket_1': Bucket(black=0, red=3, green=3),
+}
+
+end_state_0 = {
+    'bucket_0': Bucket(black=0, red=0, green=0),
+    'bucket_2': Bucket(black=0, red=3, green=0),
+    'bucket_3': Bucket(black=0, red=0, green=3),
+}
+
+initial_state_1 = {
+    'bucket_0': Bucket(black=0, red=0, green=0),
+    'bucket_1': Bucket(black=0, red=3, green=5),
+}
+
+end_state_1 = {
+    'bucket_0': Bucket(black=0, red=0, green=0),
+    'bucket_2': Bucket(black=0, red=3, green=0),
+    'bucket_3': Bucket(black=0, red=0, green=5),
+}
+
+initial_state_2 = {
+    'bucket_0': Bucket(black=0, red=0, green=0),
+    'bucket_1': Bucket(black=0, red=10, green=8),
+}
+
+end_state_2 = {
+    'bucket_0': Bucket(black=0, red=0, green=0),
+    'bucket_2': Bucket(black=0, red=10, green=0),
+    'bucket_3': Bucket(black=0, red=0, green=8),
+}
+
+
+# # data for "sorting + hitchhiker"
 # initial_state_0 = {
 #     'bucket_0': Bucket(black=10, red=0, green=0),
 #     'bucket_1': Bucket(black=0, red=3, green=3),
 # }
 
 # end_state_0 = {
-#     'bucket_0': Bucket(black=10, red=0, green=0),
-#     'bucket_2': Bucket(black=0, red=3, green=0),
-#     'bucket_3': Bucket(black=0, red=0, green=3),
+#     'bucket_0': Bucket(black=4, red=0, green=0),
+#     'bucket_2': Bucket(black=3, red=3, green=0),
+#     'bucket_3': Bucket(black=3, red=0, green=3),
 # }
 
 # initial_state_1 = {
@@ -20,56 +55,21 @@ from WorldState import *
 # }
 
 # end_state_1 = {
-#     'bucket_0': Bucket(black=10, red=0, green=0),
-#     'bucket_2': Bucket(black=0, red=3, green=0),
-#     'bucket_3': Bucket(black=0, red=0, green=5),
+#     'bucket_0': Bucket(black=2, red=0, green=0),
+#     'bucket_2': Bucket(black=3, red=3, green=0),
+#     'bucket_3': Bucket(black=5, red=0, green=5),
 # }
 
 # initial_state_2 = {
-#     'bucket_0': Bucket(black=10, red=0, green=0),
+#     'bucket_0': Bucket(black=20, red=0, green=0),
 #     'bucket_1': Bucket(black=0, red=10, green=8),
 # }
 
 # end_state_2 = {
-#     'bucket_0': Bucket(black=10, red=0, green=0),
-#     'bucket_2': Bucket(black=0, red=10, green=0),
-#     'bucket_3': Bucket(black=0, red=0, green=8),
+#     'bucket_0': Bucket(black=2, red=0, green=0),
+#     'bucket_2': Bucket(black=10, red=10, green=0),
+#     'bucket_3': Bucket(black=8, red=0, green=8),
 # }
-
-
-# data for "sorting + hitchhiker"
-initial_state_0 = {
-    'bucket_0': Bucket(black=10, red=0, green=0),
-    'bucket_1': Bucket(black=0, red=3, green=3),
-}
-
-end_state_0 = {
-    'bucket_0': Bucket(black=4, red=0, green=0),
-    'bucket_2': Bucket(black=3, red=3, green=0),
-    'bucket_3': Bucket(black=3, red=0, green=3),
-}
-
-initial_state_1 = {
-    'bucket_0': Bucket(black=10, red=0, green=0),
-    'bucket_1': Bucket(black=0, red=3, green=5),
-}
-
-end_state_1 = {
-    'bucket_0': Bucket(black=2, red=0, green=0),
-    'bucket_2': Bucket(black=3, red=3, green=0),
-    'bucket_3': Bucket(black=5, red=0, green=5),
-}
-
-initial_state_2 = {
-    'bucket_0': Bucket(black=20, red=0, green=0),
-    'bucket_1': Bucket(black=0, red=10, green=8),
-}
-
-end_state_2 = {
-    'bucket_0': Bucket(black=2, red=0, green=0),
-    'bucket_2': Bucket(black=10, red=10, green=0),
-    'bucket_3': Bucket(black=8, red=0, green=8),
-}
 
 
 WS0 = (WorldState(initial_state_0), WorldState(end_state_0))
